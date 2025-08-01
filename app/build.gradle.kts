@@ -71,7 +71,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     
-    // LazyCardStack
+    // LazyCardStack - Fixed dependency declaration
     implementation("com.github.Hukumister:LazyCardStack:1.1.2")
 
     // Testing
