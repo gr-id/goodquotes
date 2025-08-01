@@ -51,12 +51,14 @@ android {
 }
 
 dependencies {
-    // Firebase BOM
-    implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+
+    // Firebase SDKs
+    implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-messaging")
-    implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-functions")
 
     // Compose
