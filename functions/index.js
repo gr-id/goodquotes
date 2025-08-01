@@ -311,3 +311,69 @@ exports.manualQuoteFetch = functions.https.onRequest(async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 }); 
+
+// Bulk quote fetch function (for initial data setup)
+exports.bulkQuoteFetch = functions.https.onRequest(async (req, res) => {
+  try {
+    console.log('Starting bulk quote fetch...');
+    
+    const quotes = await fetchQuotesFromSources();
+    
+    if (quotes.length === 0) {
+      res.status(500).json({ error: 'No quotes fetched' });
+      return;
+    }
+    
+    // Remove duplicates
+    const uniqueQuotes = quotes.filter((quote, index, self) => 
+      index === self.findIndex(q => q.text === quote.text)
+    );
+    
+    console.log(`Fetched ${quotes.length} quotes, ${uniqueQuotes.length} unique`);
+    
+    // Batch add to Firestore
+    const batch = db.batch();
+    const addedQuotes = [];
+    
+    uniqueQuotes.forEach(quote => {
+      const docRef = db.collection('quotes').doc();
+      batch.set(docRef, quote);
+      addedQuotes.push({
+        id: docRef.id,
+        ...quote
+      });
+    });
+    
+    await batch.commit();
+    
+    // Pick one for today's quote
+    const todayQuote = addedQuotes[Math.floor(Math.random() * addedQuotes.length)];
+    
+    // Update meta/todayQuote
+    await db.collection('meta').doc('todayQuote').set({
+      quoteId: todayQuote.id,
+      updatedAt: admin.firestore.Timestamp.now(),
+      source: 'bulk_fetch'
+    });
+    
+    res.json({
+      success: true,
+      totalFetched: quotes.length,
+      uniqueAdded: addedQuotes.length,
+      todayQuote: {
+        id: todayQuote.id,
+        text: todayQuote.text,
+        author: todayQuote.author
+      },
+      allQuotes: addedQuotes.map(q => ({
+        id: q.id,
+        text: q.text,
+        author: q.author
+      }))
+    });
+    
+  } catch (error) {
+    console.error('Error in bulk quote fetch:', error);
+    res.status(500).json({ error: error.message });
+  }
+}); 
